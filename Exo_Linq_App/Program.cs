@@ -188,13 +188,15 @@ var result2_4 = from s in students
 
 var result2_4_bis = students.Where(s => s.Year_Result <= 3)
                             .OrderByDescending(s => s.Year_Result)
-                            .Select(s => new {
+                            .Select(s => new
+                            {
                                 Nom = s.Last_Name,
                                 ResultatAnnuel = s.Year_Result
                             });
 
 var result2_4_bis_2 = students.Where(s => s.Year_Result <= 3)
-                                .Select(s => new {
+                                .Select(s => new
+                                {
                                     Nom = s.Last_Name,
                                     ResultatAnnuel = s.Year_Result
                                 })
@@ -254,7 +256,8 @@ var result2_6 = from s in students
 var result2_6_bis = students.Where(s => (s.Section_ID == 1010 || s.Section_ID == 1020) &&
                         (s.Year_Result < 12 || s.Year_Result > 18))
                             .OrderBy(s => s.Student_ID)
-                            .Select(s => new {
+                            .Select(s => new
+                            {
                                 last_name = s.Last_Name,
                                 section_id = s.Section_ID,
                                 year_result = s.Year_Result
@@ -287,15 +290,83 @@ var result2_7 = from s in students
 var result2_7_bis = students.Where(s => s.Section_ID.ToString().StartsWith("13")
                     && s.Year_Result * 5 < 60)
                             .OrderByDescending(s => s.Year_Result)
-                            .Select(s => new {
+                            .Select(s => new
+                            {
                                 last_name = s.Last_Name,
                                 section_id = s.Section_ID,
                                 result_100 = s.Year_Result * 5
                             });
 
-foreach (var rs in result2_7) {
-    Console.WriteLine($"{rs.last_name} - {rs.section_id} - {rs.result_100}");
-}
+//foreach (var rs in result2_7) {
+//    Console.WriteLine($"{rs.last_name} - {rs.section_id} - {rs.result_100}");
+//}
+#endregion
+
+#endregion
+
+#region 3 Opérateurs « Count », « Min », « Max », « Sum » et « Average »
+
+#region 3.1
+
+/* Exercice 3.1 Donner le résultat annuel moyen pour l’ensemble des étudiants. */
+
+double resultatMoyen = (from s in students
+                        select s.Year_Result) // [10, 4, 12, 3,...] tableau qui contient les year_result
+                       .Average();
+
+double resultatMoyen_bis = students.Average(s => s.Year_Result);
+
+Console.WriteLine("3.1 - " + resultatMoyen);
+
+#endregion
+
+#region 3.2
+
+/* Exercice 3.2 Donner le plus haut résultat annuel obtenu par un étudiant. */
+int resultatLePlusHaut = (from s in students
+                          select s.Year_Result) // [10, 4, 12, 3,...] tableau qui contient les year_result
+                          .Max();
+
+int resultatLePlusHaut_bis = students.Max(s => s.Year_Result);
+Console.WriteLine("3.2 - " + resultatLePlusHaut_bis);
+
+#endregion
+
+#region 3.3
+
+/* Exercice 3.3 Donner la somme des résultats annuels. */
+int resultatsomme = (from s in students
+                     select s.Year_Result) // [10, 4, 12, 3,...] tableau qui contient les year_result
+                        .Sum();
+
+int resultatsomme_bis = students.Sum(s => s.Year_Result);
+Console.WriteLine("3.3 - " + resultatsomme);
+
+#endregion
+
+#region 3.4 
+
+/* Exercice 3.4 Donner le résultat annuel le plus faible. */
+int resultatLePlusBas = (from s in students
+                         select s.Year_Result) // [10, 4, 12, 3,...] tableau qui contient les year_result
+                          .Min();
+
+int resultatLePlusBas_bis = students.Min(s => s.Year_Result);
+Console.WriteLine("3.4 - " + resultatLePlusBas_bis);
+#endregion
+
+#region 3.5
+
+/* Exercice 3.5 Donner le nombre de lignes qui composent la séquence « Students » ayant obtenu
+un résultat annuel impair. */
+
+int nbrDeYearResultImpair = (from s in students
+                             where s.Year_Result % 2 != 0
+                             select s.Year_Result)
+                            .Count();
+
+int nbrDeYearResultImpair_bis = students.Count(s => s.Year_Result % 2 != 0);
+Console.WriteLine("3.5 - " + nbrDeYearResultImpair);
 #endregion
 
 #endregion
