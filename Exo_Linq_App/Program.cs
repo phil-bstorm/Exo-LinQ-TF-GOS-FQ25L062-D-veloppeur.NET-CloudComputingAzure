@@ -5,6 +5,9 @@ Console.WriteLine("*************");
 
 DataContext context = new DataContext();
 List<Student> students = context.Students;
+List<Grade> grades = context.Grades;
+List<Professor> professors = context.Professors;
+List<Section> sections = context.Sections;
 
 
 #region 1 Opérateur « Select »
@@ -367,6 +370,311 @@ int nbrDeYearResultImpair = (from s in students
 
 int nbrDeYearResultImpair_bis = students.Count(s => s.Year_Result % 2 != 0);
 Console.WriteLine("3.5 - " + nbrDeYearResultImpair);
+#endregion
+
+#endregion
+
+#region 4 Opérateurs « GroupBy », « Join » et « GroupJoin »
+
+#region 4.1
+/* Exercice 4.1 Donner pour chaque section, le résultat maximum (« Max_Result ») obtenu par les
+étudiants. */
+
+var result4_1 = context.Students.GroupBy(st => st.Section_ID)
+                                .Select(grp => new
+                                {
+                                    SectionId = grp.Key,
+                                    Max_Result = grp.Max(st => st.Year_Result)
+                                });
+
+var result4_1bis = from st in context.Students
+                   group st by st.Section_ID into grp
+                   select new
+                   {
+                       SectionId = grp.Key,
+                       Max_Result = grp.Max(st => st.Year_Result)
+                   };
+
+#endregion
+
+#region 4.2
+/* Exercice 4.2 Donner pour toutes les sections commençant par 10, le résultat annuel moyen
+(« AVGResult ») obtenu par les étudiants. */
+
+var result4_2 = from s in sections
+                join st in students on s.Section_ID equals st.Section_ID into gStudents
+                select new
+                {
+                    Section_ID = s.Section_ID,
+                    Section_Name = s.Section_Name,
+                    Section_Delegate_ID = s.Delegate_ID,
+                    Moyenne = gStudents.Average(s => s.Year_Result),
+                };
+
+var result4_2_bis = context.Students.Where(st => st.Section_ID.ToString().StartsWith("10"))
+                                .GroupBy(st => st.Section_ID)
+                                .Select(grp => new
+                                {
+                                    SectionId = grp.Key,
+                                    AVGResult = grp.Average(st => st.Year_Result)
+                                });
+#endregion
+
+#region 4.3
+
+/* Exercice 4.3 Donner le résultat moyen (« AVGResult ») et le mois en chiffre (« BirthMonth »)
+pour les étudiants né le même mois entre 1970 et 1985. */
+
+var result4_3 = context.Students.Where(st => st.BirthDate.Year >= 1970 && st.BirthDate.Year <= 1985)
+                                .GroupBy(st => st.BirthDate.Month)
+                                .Select(grp => new
+                                {
+                                    BirthMonth = grp.Key,
+                                    AVGResult = grp.Average(st => st.Year_Result)
+                                });
+
+var result4_3bis = from st in context.Students
+                   where st.BirthDate.Year >= 1970 && st.BirthDate.Year <= 1985
+                   group st by st.BirthDate.Month into grp
+                   select new
+                   {
+                       BirthMonth = grp.Key,
+                       AVGResult = grp.Average(st => st.Year_Result)
+                   };
+
+#endregion
+
+#region 4.4
+
+/* Exercice 4.4 Donner pour toutes les sections qui compte plus de 3 étudiants, la moyenne des
+résultats annuels (« AVGResult »). */
+
+var result4_4 = context.Students.GroupBy(st => st.Section_ID)
+                                .Where(grp => grp.Count() > 3)
+                                .Select(grp => new
+                                {
+                                    SectionId = grp.Key,
+                                    AVGResult = grp.Average(st => st.Year_Result)
+                                });
+
+#endregion
+
+#region 4.5
+
+/* Exercice 4.5 Donner pour chaque cours, le nom du professeur responsable ainsi que la section
+dont le professeur fait partie.*/
+
+var result4_5 = from c in context.Courses
+                join p in context.Professors on c.Professor_ID equals p.Professor_ID
+                join s in context.Sections on p.Section_ID equals s.Section_ID
+                select new
+                {
+                    CourseName = c.Course_Name,
+                    ProfessorName = p.Professor_Name,
+                    SectionName = s.Section_Name
+                };
+
+// La version expression de requête est plus simple...
+var result4_5bis = context.Courses.Join(
+                                        context.Professors,
+                                        c => c.Professor_ID,
+                                        p => p.Professor_ID,
+                                        (c, p) => new
+                                        {
+                                            Course = c,
+                                            Professor = p
+                                        }
+                                    )
+                                    .Join(
+                                        context.Sections,
+                                        cp => cp.Professor.Section_ID,
+                                        s => s.Section_ID,
+                                        (cp, s) => new
+                                        {
+                                            CourseName = cp.Course.Course_Name,
+                                            ProfessorName = cp.Professor.Professor_Name,
+                                            SectionName = s.Section_Name
+                                        }
+                                    );
+
+#endregion
+
+#region 4.6
+/* Exercice 4.6 Donner pour chaque section, l’id, le nom et le nom de son délégué. Classer les
+sections dans l’ordre inverse des id de section. */
+
+var result4_6 = from s in context.Sections
+                join st in context.Students on s.Delegate_ID equals st.Student_ID
+                orderby s.Section_ID descending
+                select new
+                {
+                    SectionId = s.Section_ID,
+                    SectionName = s.Section_Name,
+                    DelegateName = st.Last_Name
+                };
+
+var result4_6bis = context.Sections.Join(
+                                        context.Students,
+                                        s => s.Delegate_ID,
+                                        st => st.Student_ID,
+                                        (s, st) => new
+                                        {
+                                            SectionId = s.Section_ID,
+                                            SectionName = s.Section_Name,
+                                            DelegateName = st.Last_Name
+                                        }
+                                    )
+                                    .OrderByDescending(res => res.SectionId);
+#endregion
+
+#region 4.7 
+/* Exercice 4.7 Donner, pour toutes les sections, le nom des professeurs qui en sont membres
+Section_ID - Section_Name :
+-Professor_Name1
+- Professor_Name2
+- … */
+
+var result4_7 = from s in sections
+                join p in professors on s.Section_ID equals p.Section_ID into gProfs
+                select new
+                {
+                    SectionId = s.Section_ID,
+                    SectionName = s.Section_Name,
+                    Professors = gProfs.Select(p => p.Professor_Name)
+                };
+
+foreach (var sp in result4_7)
+{
+    Console.WriteLine($"{sp.SectionId} - {sp.SectionName}");
+
+    foreach (var p in sp.Professors)
+    {
+        Console.WriteLine($"\t - {p}");
+    }
+}
+
+#endregion
+
+#region 4.8
+
+/* Exercice 4.8 Même objectif que la question 4.7, mais seules les sections comportant au moins
+un professeur doivent être reprises. */
+
+Console.WriteLine("4.8");
+
+var result4_8 = from s in sections
+                join p in professors on s.Section_ID equals p.Section_ID into gProfs
+                //where gProfs.Count() >= 1 // Filtre pour ne garder que les sections avec au moins 1 prof!
+                where gProfs.Any() // alternative au filtre
+                select new
+                {
+                    SectionId = s.Section_ID,
+                    SectionName = s.Section_Name,
+                    Professors = gProfs.Select(p => p.Professor_Name)
+                };
+
+foreach (var sp in result4_8)
+{
+    Console.WriteLine($"{sp.SectionId} - {sp.SectionName}");
+
+    foreach (var p in sp.Professors)
+    {
+        Console.WriteLine($"\t - {p}");
+    }
+}
+#endregion
+
+#region 4.9
+
+/* Exercice 4.9 Donner à chaque étudiant ayant obtenu un résultat annuel supérieur ou égal à 12
+son grade en fonction de son résultat annuel et sur base de la table grade. La liste doit être
+classée dans l’ordre alphabétique des grades attribués. */
+
+Console.WriteLine("4.9");
+// CROSS JOIN (pas trop opti)
+var result4_9 = from st in students
+                from g in grades
+                where st.Year_Result >= 12 && st.Year_Result >= g.Lower_Bound && st.Year_Result <= g.Upper_Bound
+                orderby g.GradeName
+                select new
+                {
+                    Name = st.Last_Name,
+                    Result = st.Year_Result,
+                    Grade = g.GradeName
+                };
+
+foreach (var sg in result4_9)
+{
+    Console.WriteLine($"{sg.Name} - {sg.Result} - {sg.Grade}");
+}
+
+Console.WriteLine("4.9_bis");
+// students.Select -> grades.FirstOrDefault
+var result4_9_bis = (from st in students
+                     where st.Year_Result >= 12
+                     select new
+                     {
+                         Name = st.Last_Name,
+                         Result = st.Year_Result,
+                         Grade = grades.FirstOrDefault(g => st.Year_Result >= g.Lower_Bound && st.Year_Result <= g.Upper_Bound)?.GradeName ?? "Pas de grade..."
+                     }).OrderBy(sg => sg.Grade); // on ne peut pas trier avant car Grade n'existait pas avant le select
+
+foreach (var sg in result4_9_bis)
+{
+    Console.WriteLine($"{sg.Name} - {sg.Result} - {sg.Grade}");
+}
+#endregion
+
+#region 4.10
+
+var result4_10 = context.Professors.GroupJoin(                                      // Groupe join entre Prof et course
+                                        context.Courses,
+                                        p => p.Professor_ID,
+                                        c => c.Professor_ID,
+                                        (prof, courses) => new
+                                        {
+                                            Prof = prof,                            // Un prof
+                                            TempCourses = courses                   // Une liste de course (Potentiellement vide)
+                                        }
+                                   )
+                                   .SelectMany(                                     // Fonction pour applanir le resultat
+                                        res => res.TempCourses.DefaultIfEmpty(),    // → Permet d'obtenir un resultat comme "left join"
+                                        (res, c) => new                             //   Le prof sans course, ne sont pas perdu
+                                        {                                           //   contrairement à un Join (Inner join)
+                                            res.Prof,
+                                            Course = c
+                                        }
+                                   )
+                                   .GroupJoin(                                      // Groupe join entre le resultat précédent et les section
+                                        context.Sections,
+                                        res => res.Prof.Section_ID,
+                                        s => s.Section_ID,
+                                        (res, sections) => new
+                                        {
+                                            Prof = res.Prof,
+                                            Course = res.Course,
+                                            TempSections = sections
+                                        }
+                                   )
+                                   .SelectMany(                                     // Fonction pour applanir le resultat
+                                        res => res.TempSections.DefaultIfEmpty(),
+                                        (res, s) => new
+                                        {
+                                            ProfessorName = res.Prof.Professor_Name,
+                                            Section = s?.Section_Name,
+                                            CourseName = res.Course?.Course_Name,
+                                            CourseEcts = res.Course?.Course_Ects
+                                        }
+                                   )
+                                   .OrderByDescending(res => res.CourseEcts);
+
+Console.Clear();
+foreach (var item in result4_10)
+{
+    Console.WriteLine(item);
+}
+Console.WriteLine();
+
 #endregion
 
 #endregion
